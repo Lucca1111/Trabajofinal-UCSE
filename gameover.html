@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAME OVER</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            color: red;
+            font-weight: bold;
+            opacity: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+</head>
+<body>
+<div id="game-over">GAME&nbsp;OVER</div>
+
+<script>
+    const gameOverText = document.getElementById("game-over");
+    const text = gameOverText.innerText;
+    gameOverText.innerText = "";
+
+    function showLetters() {
+        for (let i = 0; i < text.length; i++) {
+            setTimeout(() => {
+                gameOverText.innerText += text[i];
+            }, i * 100); // Cambia la velocidad de aparición ajustando el valor 200 (milisegundos)
+        }
+    }
+
+    setTimeout(() => {
+        gameOverText.style.opacity = 1;
+        showLetters();
+    }, 500); // Espera 2 segundos antes de mostrar las letras
+</script>
+</body>
+</html>

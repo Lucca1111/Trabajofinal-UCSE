@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Matriz en HTML</title>
+    <style>
+        html {
+            overflow: hidden;
+        }
+//
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: black;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        td {
+            text-align: center;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+
+        .x-cell {
+            background-color: red;
+            /* Cambia el color de fondo según tus preferencias */
+            color: red;
+            /* Cambia el color del texto según tus preferencias */
+        }
+
+        .x-snake {
+            font-size: 0.6em;
+        }
+
+        .x-food {
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+
+<body>
+    <table id="matrixTable"></table>
+
+    <script>
+        // Conecta con el servidor SSE
+        const eventSource = new EventSource('/updates');
+
+        // Maneja las actualizaciones recibidas del servidor
+        eventSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data.game_over) {
+                location.replace('http://localhost:8080/gameover');
+            }
+            const table = document.getElementById('matrixTable');
+            table.innerHTML = ''; // Limpia la tabla anterior
+
+            // Genera la nueva tabla con los datos actualizados
+            for (const row of data) {
+                const tr = document.createElement('tr');
+                for (let value of row) {
+                    const td = document.createElement('td');
+                    if (value === 'O') {
+                        value = '🧉'
+                        td.classList.add('x-food')
+                    }
+                    if (value === 'X') {
+                        value = '⃞'
+                        td.classList.add('x-cell');
+                    }
+                    if (value === '*') {
+                        value = '🟢'
+                        td.classList.add('x-snake');
+                    }
+                    td.textContent = value;
+                    td.noWrap = true;
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+        };
+
+        // Captura los eventos de teclado y envía la información al servidor
+        document.addEventListener('keydown', function (event) {
+            const keyPressed = event.key;
+
+            // Realiza una solicitud POST al servidor con la tecla presionada
+            fetch('/keypress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ key: keyPressed })
+            });
+        });
+    </script>
+</body>
+
+</html>
