@@ -69,8 +69,28 @@ func generarEventos() {
 }
 
 func generarTablero() [constCantFilasTablero][constCantColumnasTablero]string {
+
 	var tablero [constCantFilasTablero][constCantColumnasTablero]string
-	// Programar aquí
+
+	for t := 0; t < constCantFilasTablero; t++ {
+		for v := 0; v < constCantColumnasTablero; v++ {
+
+			if v == 0 {
+
+				tablero[t][v] = constSimboloObstaculo
+
+			} else if t == 0 {
+
+				tablero[t][v] = constSimboloObstaculo
+
+			}
+
+			tablero[constCantFilasTablero-1][v] = constSimboloObstaculo
+
+			tablero[t][constCantColumnasTablero-1] = constSimboloObstaculo
+
+		}
+	}
 
 	return tablero
 }
