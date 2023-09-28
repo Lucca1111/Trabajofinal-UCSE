@@ -111,7 +111,78 @@ func actualizarSerpienteEnTablero(tablero *[constCantFilasTablero][constCantColu
 }
 
 func calcularNuevaPosicionSerpiente(serpiente [][constCantColumnasSerpiente]int) {
-	// Programar aquí
+
+	var (
+		direX int
+		direY int
+	)
+
+	for m := 0; m < len(direccion); m++ {
+
+		if m == 0 {
+
+			direX = direccion[m]
+
+		} else {
+
+			direY = direccion[m]
+		}
+
+	}
+
+	switch direX {
+
+	case 1:
+
+		for f := 0; f < len(serpiente); f++ {
+			for g := 0; g < constCantColumnasSerpiente-1; g++ {
+
+				serpiente[f][g] = serpiente[f][g] + 1
+
+			}
+		}
+
+	case -1:
+		for f := 0; f < len(serpiente); f++ {
+			for g := 0; g < constCantColumnasSerpiente-1; g++ {
+
+				serpiente[f][g] = serpiente[f][g] - 1
+
+			}
+		}
+
+	}
+
+	switch direY {
+
+	case 1:
+
+		for f := 0; f < len(serpiente); f++ {
+			for g := 0; g < constCantColumnasSerpiente; g++ {
+
+				if g == 1 {
+
+					serpiente[f][g] = serpiente[f][g] + 1
+
+				}
+			}
+		}
+
+	case -1:
+		for f := 0; f < len(serpiente); f++ {
+			for g := 0; g < constCantColumnasSerpiente; g++ {
+
+				if g == 1 {
+
+					serpiente[f][g] = serpiente[f][g] - 1
+
+				}
+
+			}
+		}
+
+	}
+
 }
 
 func verificarObstaculos(tablero [constCantFilasTablero][constCantColumnasTablero]string,
