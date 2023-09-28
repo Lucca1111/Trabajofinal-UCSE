@@ -100,6 +100,10 @@ func generarSerpiente() [][constCantColumnasSerpiente]int {
 		serpiente [][constCantColumnasSerpiente]int
 	)
 
+	for i := 0; i < 4; i++ {
+		serpiente[0][i] = '*'
+	}
+
 	// Programar aquí
 
 	return serpiente
