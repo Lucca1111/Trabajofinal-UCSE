@@ -1,104 +1,309 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
-    <title>Matriz en HTML</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Core Multi-Rubro</title>
     <style>
-        html {
-            overflow: hidden;
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --panel-light: #1f2937;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #22c55e;
+            --bot: #1d4ed8;
+            --user: #065f46;
+            --border: #374151;
         }
-//
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
         body {
+            margin: 0;
+            background: linear-gradient(135deg, var(--bg), #020617);
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            padding: 24px;
+        }
+
+        .app {
+            width: min(980px, 100%);
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 320px 1fr;
+        }
+
+        .panel {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 1.35rem;
+        }
+
+        .subtitle {
             margin: 0;
-            background-color: black;
+            color: var(--muted);
+            font-size: 0.92rem;
         }
 
-        table {
-            border-collapse: collapse;
+        label {
+            display: block;
+            margin: 14px 0 8px;
+            font-size: 0.9rem;
+            color: var(--muted);
         }
 
-        td {
-            text-align: center;
-            font-weight: bold;
-            word-wrap: break-word;
+        select, button, input {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel-light);
+            color: var(--text);
+            padding: 10px 12px;
+            font-size: 0.95rem;
         }
 
-        .x-cell {
-            background-color: red;
-            /* Cambia el color de fondo según tus preferencias */
-            color: red;
-            /* Cambia el color del texto según tus preferencias */
+        button {
+            cursor: pointer;
+            background: var(--accent);
+            color: #052e16;
+            border: none;
+            font-weight: 700;
         }
 
-        .x-snake {
-            font-size: 0.6em;
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        .x-food {
-            font-size: 1.5em;
+        .chat-layout {
+            display: grid;
+            grid-template-rows: 1fr auto;
+            min-height: 75vh;
+            gap: 10px;
+        }
+
+        .messages {
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(2, 6, 23, 0.65);
+        }
+
+        .bubble {
+            margin: 8px 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            max-width: 85%;
+            white-space: pre-wrap;
+            line-height: 1.35;
+        }
+
+        .bot {
+            background: rgba(29, 78, 216, 0.25);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+        }
+
+        .user {
+            margin-left: auto;
+            background: rgba(6, 95, 70, 0.35);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .meta {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.4;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+
+        .composer {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+
+        .composer button {
+            width: auto;
+            padding: 10px 14px;
+        }
+
+        code {
+            color: #93c5fd;
+        }
+
+        @media (max-width: 860px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-layout {
+                min-height: 68vh;
+            }
         }
     </style>
 </head>
-
 <body>
-    <table id="matrixTable"></table>
+<main class="app">
+    <section class="panel">
+        <h1>Chatbot Core</h1>
+        <p class="subtitle">Motor base para inmobiliaria y otros rubros.</p>
 
-    <script>
-        // Conecta con el servidor SSE
-        const eventSource = new EventSource('/updates');
+        <label for="verticalSelect">Vertical de negocio</label>
+        <select id="verticalSelect"></select>
+        <button id="startChatBtn">Iniciar chat</button>
 
-        // Maneja las actualizaciones recibidas del servidor
-        eventSource.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            if (data.game_over) {
-                location.replace('http://localhost:8080/gameover');
-            }
-            const table = document.getElementById('matrixTable');
-            table.innerHTML = ''; // Limpia la tabla anterior
+        <div class="meta" id="sessionMeta">
+            Sesion: <code>sin iniciar</code><br>
+            Estado: esperando inicio
+        </div>
+    </section>
 
-            // Genera la nueva tabla con los datos actualizados
-            for (const row of data) {
-                const tr = document.createElement('tr');
-                for (let value of row) {
-                    const td = document.createElement('td');
-                    if (value === 'O') {
-                        value = '🧉'
-                        td.classList.add('x-food')
-                    }
-                    if (value === 'X') {
-                        value = '⃞'
-                        td.classList.add('x-cell');
-                    }
-                    if (value === '*') {
-                        value = '🟢'
-                        td.classList.add('x-snake');
-                    }
-                    td.textContent = value;
-                    td.noWrap = true;
-                    tr.appendChild(td);
-                }
-                table.appendChild(tr);
-            }
-        };
+    <section class="panel chat-layout">
+        <div class="messages" id="messages"></div>
 
-        // Captura los eventos de teclado y envía la información al servidor
-        document.addEventListener('keydown', function (event) {
-            const keyPressed = event.key;
+        <form id="chatForm" class="composer">
+            <input id="messageInput" type="text" placeholder="Escribe un mensaje..." autocomplete="off" disabled />
+            <button type="submit" id="sendBtn" disabled>Enviar</button>
+        </form>
+    </section>
+</main>
 
-            // Realiza una solicitud POST al servidor con la tecla presionada
-            fetch('/keypress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ key: keyPressed })
-            });
+<script>
+    const verticalSelect = document.getElementById("verticalSelect");
+    const startChatBtn = document.getElementById("startChatBtn");
+    const messagesContainer = document.getElementById("messages");
+    const chatForm = document.getElementById("chatForm");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const sessionMeta = document.getElementById("sessionMeta");
+
+    let sessionId = "";
+    let sessionCompleted = false;
+
+    function addMessage(text, role) {
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + role;
+        bubble.textContent = text;
+        messagesContainer.appendChild(bubble);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function updateMeta(info) {
+        const status = sessionCompleted ? "completada" : "activa";
+        sessionMeta.innerHTML = "Sesion: <code>" + (sessionId || "sin iniciar") + "</code><br>" +
+            "Estado: " + (sessionId ? status : "esperando inicio") +
+            (info ? "<br>" + info : "");
+    }
+
+    async function loadVerticals() {
+        const response = await fetch("/api/verticals");
+        const data = await response.json();
+        const verticals = data.verticals || [];
+
+        verticalSelect.innerHTML = "";
+        for (const vertical of verticals) {
+            const option = document.createElement("option");
+            option.value = vertical.id;
+            option.textContent = vertical.display_name;
+            verticalSelect.appendChild(option);
+        }
+    }
+
+    async function startChat() {
+        sessionCompleted = false;
+        messagesContainer.innerHTML = "";
+
+        const response = await fetch("/api/chat/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vertical_id: verticalSelect.value })
         });
-    </script>
-</body>
 
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.error || "No se pudo iniciar el chat");
+        }
+
+        sessionId = payload.session_id;
+        addMessage(payload.reply, "bot");
+
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+        updateMeta("Vertical: " + payload.vertical_id);
+    }
+
+    async function sendMessage(message) {
+        addMessage(message, "user");
+
+        const response = await fetch("/api/chat/message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                session_id: sessionId,
+                message: message
+            })
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.error || "Error enviando mensaje");
+        }
+
+        sessionCompleted = Boolean(payload.completed);
+        addMessage(payload.reply, "bot");
+
+        if (sessionCompleted) {
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+        }
+
+        updateMeta(payload.missing_field ? "Siguiente campo: " + payload.missing_field : "");
+    }
+
+    startChatBtn.addEventListener("click", async () => {
+        startChatBtn.disabled = true;
+        try {
+            await startChat();
+        } catch (error) {
+            addMessage(error.message, "bot");
+        } finally {
+            startChatBtn.disabled = false;
+        }
+    });
+
+    chatForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message || !sessionId || sessionCompleted) return;
+
+        messageInput.value = "";
+        try {
+            await sendMessage(message);
+        } catch (error) {
+            addMessage(error.message, "bot");
+        }
+    });
+
+    loadVerticals().catch((error) => {
+        addMessage("No se pudieron cargar verticales: " + error.message, "bot");
+    });
+</script>
+</body>
 </html>
