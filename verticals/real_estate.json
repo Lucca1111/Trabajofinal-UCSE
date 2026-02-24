@@ -1,0 +1,99 @@
+{
+  "id": "real_estate",
+  "display_name": "Inmobiliaria",
+  "welcome_message": "Hola, soy tu asistente inmobiliario. Te voy a hacer unas preguntas cortas para recomendarte propiedades relevantes.",
+  "completion_message": "Excelente, ya tengo la base para armarte propuestas.",
+  "handoff_message": "Un asesor de ventas te contactara por WhatsApp o llamada dentro del horario comercial.",
+  "fallback_message": "No pude validar ese dato.",
+  "handoff_keywords": [
+    "humano",
+    "asesor",
+    "agente",
+    "llamar",
+    "telefono"
+  ],
+  "faqs": [
+    {
+      "keywords": [
+        "comision",
+        "comisiones",
+        "comision inmobiliaria"
+      ],
+      "answer": "La comision depende del tipo de operacion y propiedad. Cuando cerremos tu perfil te enviamos detalle exacto."
+    },
+    {
+      "keywords": [
+        "credito",
+        "financiacion",
+        "hipoteca"
+      ],
+      "answer": "Trabajamos opciones de credito con bancos aliados y pre-evaluacion en 24 a 48 horas."
+    },
+    {
+      "keywords": [
+        "visita",
+        "recorrido",
+        "tour"
+      ],
+      "answer": "Podemos coordinar visita presencial o tour virtual, segun la propiedad."
+    }
+  ],
+  "fields": [
+    {
+      "key": "full_name",
+      "label": "Nombre completo",
+      "question": "Cual es tu nombre completo?",
+      "required": true,
+      "validation_regex": "^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{3,}$",
+      "example": "Maria Gomez"
+    },
+    {
+      "key": "operation_type",
+      "label": "Tipo de operacion",
+      "question": "Buscas compra, alquiler o venta?",
+      "required": true,
+      "validation_regex": "(?i)^(compra|alquiler|venta)$",
+      "example": "compra"
+    },
+    {
+      "key": "property_type",
+      "label": "Tipo de propiedad",
+      "question": "Que tipo de propiedad te interesa? (casa, departamento, lote, oficina)",
+      "required": true,
+      "validation_regex": "(?i)^(casa|departamento|lote|oficina)$",
+      "example": "departamento"
+    },
+    {
+      "key": "location",
+      "label": "Zona de interes",
+      "question": "En que zona o barrio te interesa buscar?",
+      "required": true,
+      "validation_regex": "^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ,.\\-]{3,}$",
+      "example": "Nueva Cordoba"
+    },
+    {
+      "key": "budget",
+      "label": "Presupuesto",
+      "question": "Cual es tu presupuesto aproximado? (ej: 120000 USD o 450000 ARS)",
+      "required": true,
+      "validation_regex": "^[0-9$., A-Za-z]{4,}$",
+      "example": "120000 USD"
+    },
+    {
+      "key": "bedrooms",
+      "label": "Cantidad de dormitorios",
+      "question": "Cuantos dormitorios necesitas? (opcional: puedes responder omitir)",
+      "required": false,
+      "validation_regex": "^[0-9]{1,2}$",
+      "example": "2"
+    },
+    {
+      "key": "contact_phone",
+      "label": "Telefono de contacto",
+      "question": "Compartenos un telefono para coordinar visitas.",
+      "required": true,
+      "validation_regex": "^[0-9+() -]{8,20}$",
+      "example": "+54 9 351 555 1234"
+    }
+  ]
+}

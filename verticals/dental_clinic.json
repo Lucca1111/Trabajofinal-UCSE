@@ -1,0 +1,66 @@
+{
+  "id": "dental_clinic",
+  "display_name": "Clinica Dental",
+  "welcome_message": "Hola, soy tu asistente de clinica dental. Te ayudare a registrar tu consulta en menos de 1 minuto.",
+  "completion_message": "Listo, ya tengo los datos para agendarte.",
+  "handoff_message": "Nuestro equipo de recepcion te contactara para confirmar turno y cobertura.",
+  "fallback_message": "No pude interpretar ese dato.",
+  "handoff_keywords": [
+    "humano",
+    "asesor",
+    "recepcion",
+    "llamar"
+  ],
+  "faqs": [
+    {
+      "keywords": [
+        "obra social",
+        "prepaga",
+        "cobertura"
+      ],
+      "answer": "Trabajamos con obras sociales y prepagas. Te confirmamos cobertura al recibir tus datos."
+    },
+    {
+      "keywords": [
+        "urgencia",
+        "dolor",
+        "emergencia"
+      ],
+      "answer": "Si es urgencia, priorizamos turno en el dia segun disponibilidad."
+    }
+  ],
+  "fields": [
+    {
+      "key": "full_name",
+      "label": "Nombre completo",
+      "question": "Cual es tu nombre completo?",
+      "required": true,
+      "validation_regex": "^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{3,}$",
+      "example": "Juan Perez"
+    },
+    {
+      "key": "service",
+      "label": "Tipo de consulta",
+      "question": "Que necesitas? (limpieza, ortodoncia, implante, dolor)",
+      "required": true,
+      "validation_regex": "(?i)^(limpieza|ortodoncia|implante|dolor)$",
+      "example": "limpieza"
+    },
+    {
+      "key": "city",
+      "label": "Ciudad",
+      "question": "En que ciudad te encuentras?",
+      "required": true,
+      "validation_regex": "^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{3,}$",
+      "example": "Cordoba"
+    },
+    {
+      "key": "contact_phone",
+      "label": "Telefono de contacto",
+      "question": "Cual es tu telefono para coordinar?",
+      "required": true,
+      "validation_regex": "^[0-9+() -]{8,20}$",
+      "example": "+54 9 351 555 1234"
+    }
+  ]
+}

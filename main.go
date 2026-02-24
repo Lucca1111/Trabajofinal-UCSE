@@ -2,126 +2,158 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"math/rand"
+	"errors"
+	"log"
 	"net/http"
-	"time"
+	"os"
+	"strings"
 )
 
-// Agrega un canal para enviar actualizaciones a los clientes
-var updates = make(chan string)
+type startChatRequest struct {
+	VerticalID string `json:"vertical_id"`
+}
+
+type chatMessageRequest struct {
+	SessionID string `json:"session_id"`
+	Message   string `json:"message"`
+}
 
 func main() {
-	rand.Seed(time.Now().Unix())
+	engine, err := NewEngine()
+	if err != nil {
+		log.Fatalf("no se pudo iniciar el motor del chatbot: %v", err)
+	}
 
-	// Ruta para servir la página principal
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", serveIndex)
+	mux.HandleFunc("/api/verticals", listVerticalsHandler(engine))
+	mux.HandleFunc("/api/chat/start", startChatHandler(engine))
+	mux.HandleFunc("/api/chat/message", chatMessageHandler(engine))
+
+	addr := ":" + serverPort()
+	log.Printf("chatbot core escuchando en http://localhost%s", addr)
+	if err := http.ListenAndServe(addr, withCORS(mux)); err != nil {
+		log.Fatalf("error de servidor: %v", err)
+	}
+}
+
+func serveIndex(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	http.ServeFile(w, r, "index.html")
+}
+
+func listVerticalsHandler(engine *Engine) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, "metodo no permitido")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]any{
+			"verticals": engine.ListVerticals(),
+		})
+	}
+}
+
+func startChatHandler(engine *Engine) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeError(w, http.StatusMethodNotAllowed, "metodo no permitido")
+			return
+		}
+
+		var req startChatRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "payload invalido")
+			return
+		}
+
+		response, err := engine.StartSession(strings.TrimSpace(req.VerticalID))
+		if err != nil {
+			if errors.Is(err, ErrUnknownVertical) {
+				writeError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			writeError(w, http.StatusInternalServerError, "error interno al iniciar sesion")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, response)
+	}
+}
+
+func chatMessageHandler(engine *Engine) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeError(w, http.StatusMethodNotAllowed, "metodo no permitido")
+			return
+		}
+
+		var req chatMessageRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "payload invalido")
+			return
+		}
+
+		response, err := engine.HandleMessage(strings.TrimSpace(req.SessionID), strings.TrimSpace(req.Message))
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrUnknownSession):
+				writeError(w, http.StatusNotFound, err.Error())
+			case errors.Is(err, ErrEmptyMessage):
+				writeError(w, http.StatusBadRequest, err.Error())
+			default:
+				writeError(w, http.StatusInternalServerError, "error interno procesando mensaje")
+			}
+
+			return
+		}
+
+		writeJSON(w, http.StatusOK, response)
+	}
+}
+
+func writeJSON(w http.ResponseWriter, status int, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		http.Error(w, "error serializando respuesta", http.StatusInternalServerError)
+	}
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{
+		"error": message,
 	})
-
-	// Ruta para manejar la solicitud POST del evento de teclado
-	http.HandleFunc("/keypress", keyPressHandler)
-
-	// Agrega una nueva ruta para SSE
-	http.HandleFunc("/updates", updatesHandler)
-
-	// Agrega una nueva ruta para "game over"
-	http.HandleFunc("/gameover", gameoverHandler)
-
-	// Inicia una goroutine para enviar actualizaciones a los clientes
-	go generarEventos()
-
-	fmt.Println("Abrir navegador e ingresar a http://localhost:8080/")
-
-	// Inicia el servidor en el puerto 8080
-	http.ListenAndServe(":8080", nil)
 }
 
-// Handler para "game over"
-func gameoverHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "gameover.html")
-}
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
-// Handler para la conexión SSE
-func updatesHandler(w http.ResponseWriter, r *http.Request) {
-	// Establece las cabeceras para indicar que esta es una conexión SSE
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	// Mantén la conexión abierta
-	for {
-		// Espera a recibir una actualización desde el canal de actualizaciones
-		update := <-updates
-
-		// Escribe la actualización al cliente
-		fmt.Fprintf(w, "data: %s\n\n", update)
-
-		// Flushea el buffer para enviar la actualización inmediatamente
-		w.(http.Flusher).Flush()
-	}
-}
-
-// Handler para manejar la solicitud POST cuando el usuario presiona una tecla
-func keyPressHandler(w http.ResponseWriter, r *http.Request) {
-	// Leer los datos JSON enviados en la solicitud
-	var data map[string]string
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, "Error al leer los datos JSON", http.StatusBadRequest)
-		return
-	}
-
-	// Obtener la tecla presionada del mapa de datos
-	keyPressed, ok := data["key"]
-	if !ok {
-		http.Error(w, "Tecla no proporcionada", http.StatusBadRequest)
-		return
-	}
-
-	// Actualizar la dirección según la tecla presionada
-	switch keyPressed {
-	case "ArrowRight":
-		{
-			direccion[constDirY] = 1
-			direccion[constDirX] = 0
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
 		}
-	case "ArrowLeft":
-		{
-			direccion[constDirY] = -1
-			direccion[constDirX] = 0
-		}
-	case "ArrowUp":
-		{
-			direccion[constDirY] = 0
-			direccion[constDirX] = -1
-		}
-	case "ArrowDown":
-		{
-			direccion[constDirY] = 0
-			direccion[constDirX] = 1
-		}
-	}
 
-	// Responder con un mensaje de éxito
-	w.WriteHeader(http.StatusOK)
+		next.ServeHTTP(w, r)
+	})
 }
 
-// Se envía actualización de tablero al cliente
-func enviarActualizacionTablero(tablero [constCantFilasTablero][constCantColumnasTablero]string) {
-	// Convierte la matriz en una cadena JSON
-	update, err := json.Marshal(tablero)
-	if err != nil {
-		fmt.Println("Error al convertir la matriz en JSON:", err)
+func serverPort() string {
+	const defaultPort = "8080"
+
+	if value := strings.TrimSpace(os.Getenv("PORT")); value != "" {
+		return value
 	}
 
-	// Envía la actualización a todos los clientes conectados
-	updates <- string(update)
-}
-
-func enviarGameOver() {
-	// Envía la actualización de game over a todos los clientes conectados
-	updates <- "{\"game_over\": true}"
-
-	fmt.Println("Game Over")
+	return defaultPort
 }
